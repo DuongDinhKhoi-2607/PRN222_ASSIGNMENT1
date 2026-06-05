@@ -1,0 +1,71 @@
+@model SubjectDto
+@{
+    ViewData["Title"] = "Chi tiết Môn học";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.form-card { max-width: 560px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.form-card-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .85rem; background: var(--bg-elevated); }
+.form-card-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent-2), #00b090); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; box-shadow: 0 0 16px var(--accent-2-glow); flex-shrink: 0; }
+.form-card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+.form-card-subtitle { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+
+.detail-list { padding: 2rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.detail-row { display: grid; grid-template-columns: 140px 1fr; gap: 1rem; align-items: center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+.detail-key { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.detail-val { font-size: .9rem; color: var(--text-primary); }
+.badge-code { display: inline-flex; align-items: center; padding: .25rem .7rem; background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3); border-radius: 999px; font-size: .8rem; font-weight: 600; color: #a78bfa; }
+.id-chip { font-size: .8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.form-actions { display: flex; gap: .75rem; padding: 1.25rem 2rem; border-top: 1px solid var(--border); background: var(--bg-elevated); }
+.btn-edit { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; background: linear-gradient(135deg, #ffb703, #ff8c00); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .85rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); box-shadow: 0 4px 12px rgba(255,183,3,.3); text-decoration: none; }
+.btn-edit:hover { transform: translateY(-1px); color: #fff; }
+.btn-cancel { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: .85rem; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); text-decoration: none; }
+.btn-cancel:hover { background: var(--bg-hover); color: var(--text-primary); }
+</style>
+
+<div class="crud-page">
+    <div class="form-card">
+        <div class="form-card-header">
+            <div class="form-card-icon"><i class="fa-solid fa-book-open"></i></div>
+            <div>
+                <div class="form-card-title">Chi tiết Môn học</div>
+                <div class="form-card-subtitle">Thông tin đầy đủ về môn học</div>
+            </div>
+        </div>
+
+        <div class="detail-list">
+            <div class="detail-row">
+                <span class="detail-key">ID</span>
+                <span class="id-chip">#@Model.Id</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Mã môn học</span>
+                <span class="badge-code">@Model.Code</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Tên môn học</span>
+                <span class="detail-val" style="font-weight:600">@Model.Name</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-key">Mô tả</span>
+                <span class="detail-val" style="color:var(--text-secondary)">@(Model.Description ?? "Không có mô tả")</span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            @if (User.IsInRole("admin"))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+                    <i class="fa-solid fa-pen"></i> Sửa
+                </a>
+            }
+            <a asp-action="Index" class="btn-cancel">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+</div>

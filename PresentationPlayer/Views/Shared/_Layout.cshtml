@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="RAG AI Assistant – Chat and Document Management" />
+    <title>@ViewData["Title"] - RAG AI Assistant</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @{
+        var path = Context.Request.Path.Value ?? "";
+        var isChat   = path.Contains("/Chat",   StringComparison.OrdinalIgnoreCase);
+        var isUpload = path.Contains("/Upload",  StringComparison.OrdinalIgnoreCase);
+
+        // Get authenticated user claims
+        var userName = User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Khách";
+        var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var isLecturerOrAdmin = roleClaim == "lecturer" || roleClaim == "admin";
+
+        var roleDisplay = roleClaim switch {
+            "admin" => "Quản trị viên",
+            "lecturer" => "Giảng viên",
+            "student" => "Sinh viên",
+            _ => "Khách"
+        };
+    }
+
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <span class="brand-name">RAG Assistant</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Main</div>
+                @if (roleClaim == "student" || roleClaim == "lecturer")
+                {
+                    <a href="/Chat" class="nav-item @(isChat ? "active" : "")">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>Chat AI</span>
+                        <div class="nav-indicator"></div>
+                    </a>
+                }
+
+                @if (roleClaim == "lecturer")
+                {
+                    <a href="/Document" class="nav-item @(path.Contains("/Document", StringComparison.OrdinalIgnoreCase) && !isUpload ? "active" : "")">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>Quản lý Tài liệu</span>
+                        <div class="nav-indicator"></div>
+                    </a>
+                }
+                @if (isLecturerOrAdmin)
+                {
+                    <a href="/Subject" class="nav-item @(path.Contains("/Subject", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                        <i class="fa-solid fa-book"></i>
+                        <span>Quản lý Môn học</span>
+                        <div class="nav-indicator"></div>
+                    </a>
+                }
+                @if (roleClaim == "admin")
+                {
+                    <div class="nav-section-label" style="margin-top:.75rem">Admin</div>
+                    <a href="/Admin" class="nav-item @(path.Contains("/Admin", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span>Quản lý Quyền</span>
+                        <div class="nav-indicator"></div>
+                    </a>
+                }
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-badge">
+                    <div class="user-avatar" style="background: @(roleClaim == "lecturer" || roleClaim == "admin" ? "linear-gradient(135deg,#6c63ff,#a78bfa)" : "linear-gradient(135deg,#00d4aa,#00b090)")">
+                        <i class="fa-solid @(roleClaim == "lecturer" || roleClaim == "admin" ? "fa-chalkboard-user" : "fa-graduation-cap")"></i>
+                    </div>
+                    <div class="user-info" style="flex: 1; min-width: 0; margin-left: 0.5rem;">
+                        <span class="user-name" title="@userName" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@userName</span>
+                        <span class="user-role" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@roleDisplay</span>
+                    </div>
+                    <a href="/Auth/Logout" class="btn-logout" title="Đăng xuất" style="color: var(--accent-danger); font-size: 1.05rem; padding: .3rem; transition: transform var(--transition); display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                        <i class="fa-solid fa-power-off"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-area">
+            <header class="topbar">
+                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="topbar-title">@(ViewData["Title"] ?? "RAG Assistant")</div>
+                <div class="topbar-actions">
+                    <div class="status-badge online">
+                        <span class="status-dot"></span>
+                        <span>System Online</span>
+                    </div>
+                </div>
+            </header>
+
+            <main class="page-content" role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,116 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Từ chối truy cập - RAG AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <style>
+        .denied-body {
+            background: radial-gradient(circle at top right, #3b151e, #0d0f14 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 1.5rem;
+        }
+        .denied-container {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+        .denied-card {
+            background: rgba(19, 22, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 77, 109, 0.15);
+            border-radius: var(--radius-xl);
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow-lg), 0 0 40px rgba(255, 77, 109, 0.1);
+            animation: card-appear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @@keyframes card-appear {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .denied-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 77, 109, 0.1);
+            border: 1px solid rgba(255, 77, 109, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-danger);
+            font-size: 2.2rem;
+            margin: 0 auto 1.5rem;
+            animation: pulse-danger 2s infinite;
+        }
+        @@keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 109, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 77, 109, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 109, 0); }
+        }
+        .denied-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.75rem;
+        }
+        .denied-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .denied-btn {
+            height: 44px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            color: var(--text-primary);
+            box-shadow: none;
+            width: auto;
+            min-width: 160px;
+            transition: all var(--transition);
+        }
+        .denied-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="denied-body">
+
+    <div class="denied-container">
+        <div class="denied-card">
+            <div class="denied-icon">
+                <i class="fa-solid fa-hand"></i>
+            </div>
+            
+            <h1 class="denied-title">Quyền truy cập bị từ chối</h1>
+            <p class="denied-desc">
+                Tài khoản của bạn có vai trò là <strong>Sinh viên</strong>, không có quyền truy cập trang quản lý và tải lên tài liệu học tập. <br />
+                Chức năng này chỉ dành cho <strong>Giảng viên</strong> hoặc <strong>Quản trị viên</strong> hệ thống.
+            </p>
+
+            <a href="/Chat" class="btn-primary denied-btn">
+                <i class="fa-solid fa-house"></i> Quay lại trang chủ
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

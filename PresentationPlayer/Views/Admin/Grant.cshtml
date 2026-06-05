@@ -1,0 +1,147 @@
+@model BussinessLayer.DTOs.GrantPermissionDto
+@{
+    ViewData["Title"] = "Cấp quyền cho Giảng viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var lecturers = ViewBag.Lecturers as IEnumerable<BussinessLayer.DTOs.UserDto>;
+    var subjects = ViewBag.Subjects as IEnumerable<BussinessLayer.DTOs.SubjectDto>;
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-heading { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: .65rem; }
+.page-heading i { -webkit-text-fill-color: #a78bfa; }
+
+.btn-back { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: .82rem; font-weight: 500; text-decoration: none; transition: all var(--transition); }
+.btn-back:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
+
+.grant-form-wrap { max-width: 640px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .75rem; }
+.card-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.card-icon.purple { background: rgba(108,99,255,.2); color: var(--accent); }
+.card-title { font-size: .95rem; font-weight: 600; color: var(--text-primary); }
+.card-subtitle { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+.card-body { padding: 1.5rem; }
+
+.form-group { margin-bottom: 1.25rem; }
+.form-label { display: block; font-size: .8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: .45rem; }
+.form-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); padding: .65rem .9rem; font-size: .875rem; font-family: 'Inter', sans-serif; transition: all var(--transition); }
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.form-input option { background: var(--bg-elevated); }
+
+.toggle-wrap { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
+.toggle-label { font-size: .85rem; color: var(--text-primary); flex: 1; }
+.toggle-sublabel { font-size: .72rem; color: var(--text-muted); margin-top: .15rem; }
+
+.custom-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.custom-toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--bg-hover); border: 1px solid var(--border-strong); border-radius: 999px; transition: all var(--transition); cursor: pointer; }
+.toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; bottom: 2px; background: var(--text-muted); border-radius: 50%; transition: all var(--transition); }
+.custom-toggle input:checked + .toggle-slider { background: rgba(0,212,170,.2); border-color: rgba(0,212,170,.5); }
+.custom-toggle input:checked + .toggle-slider::before { transform: translateX(20px); background: var(--accent-2); }
+
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .7rem 1.5rem; background: linear-gradient(135deg, var(--accent), #a78bfa); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .875rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); box-shadow: 0 4px 16px var(--accent-glow); width: 100%; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
+
+.alert-error-bar { display: flex; align-items: center; gap: .75rem; padding: .85rem 1.25rem; background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.25); border-radius: var(--radius-md); color: var(--accent-danger); font-size: .85rem; margin-bottom: 1.5rem; animation: msg-in .25s ease; }
+
+.validation-error { color: var(--accent-danger); font-size: .78rem; margin-top: .35rem; }
+
+.info-hint { display: flex; align-items: flex-start; gap: .5rem; padding: .75rem 1rem; background: rgba(108,99,255,.06); border: 1px solid rgba(108,99,255,.15); border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: .78rem; color: var(--text-secondary); line-height: 1.5; }
+.info-hint i { color: var(--accent); margin-top: .1rem; flex-shrink: 0; }
+</style>
+
+<div class="crud-page">
+    <div class="page-header">
+        <h1 class="page-heading">
+            <i class="fa-solid fa-user-plus"></i>
+            Cấp quyền cho Giảng viên
+        </h1>
+        <a asp-action="Index" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-error-bar">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <div class="grant-form-wrap">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon purple">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <div class="card-title">Cấp quyền Upload & Edit</div>
+                    <div class="card-subtitle">Chọn giảng viên và môn học để cấp quyền</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="info-hint">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Giảng viên được cấp quyền sẽ có thể Upload, Chỉnh sửa, và Xóa tài liệu cho môn học được chỉ định. Giảng viên không có quyền chỉ có thể xem tài liệu.</span>
+                </div>
+
+                <form asp-action="Grant" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label asp-for="LecturerId" class="form-label">
+                            <i class="fa-solid fa-chalkboard-user" style="margin-right:.3rem;color:var(--accent)"></i>
+                            Chọn Giảng viên
+                        </label>
+                        <select asp-for="LecturerId" class="form-input">
+                            <option value="">-- Chọn giảng viên --</option>
+                            @if (lecturers != null)
+                            {
+                                @foreach (var l in lecturers)
+                                {
+                                    <option value="@l.Id">@l.FullName (@l.Email)</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="LecturerId" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="SubjectId" class="form-label">
+                            <i class="fa-solid fa-book" style="margin-right:.3rem;color:var(--accent-2)"></i>
+                            Chọn Môn học
+                        </label>
+                        <select asp-for="SubjectId" class="form-input">
+                            <option value="">-- Chọn môn học --</option>
+                            @if (subjects != null)
+                            {
+                                @foreach (var s in subjects)
+                                {
+                                    <option value="@s.Id">@s.Code – @s.Name</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="SubjectId" class="validation-error"></span>
+                    </div>
+
+                    <input type="hidden" asp-for="CanUpload" value="true" />
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Cấp quyền
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

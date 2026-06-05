@@ -1,0 +1,83 @@
+@model DocumentDto
+@{
+    ViewData["Title"] = "Sửa Tài liệu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var subjects = ViewBag.Subjects as IEnumerable<SubjectDto> ?? Enumerable.Empty<SubjectDto>();
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.form-card { max-width: 560px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.form-card-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .85rem; background: var(--bg-elevated); }
+.form-card-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #ffb703, #ff8c00); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; box-shadow: 0 0 16px rgba(255,183,3,.3); flex-shrink: 0; }
+.form-card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+.form-card-subtitle { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+.form-card-body { padding: 2rem; }
+.field-group { margin-bottom: 1.5rem; }
+.field-label { display: block; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: .55rem; }
+.field-label .req { color: var(--accent-danger); margin-left: .2rem; }
+.field-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); padding: .75rem 1rem; font-size: .9rem; font-family: 'Inter', sans-serif; transition: all var(--transition); appearance: none; }
+.field-input:focus { outline: none; border-color: var(--accent-warn); box-shadow: 0 0 0 3px rgba(255,183,3,.2); }
+.alert-err { display: flex; align-items: flex-start; gap: .75rem; padding: .9rem 1.25rem; background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.2); border-radius: var(--radius-md); color: #ff6b84; font-size: .85rem; margin-bottom: 1.5rem; }
+.form-actions { display: flex; gap: .75rem; padding: 1.25rem 2rem; border-top: 1px solid var(--border); background: var(--bg-elevated); }
+.btn-submit { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.5rem; background: linear-gradient(135deg, #ffb703, #ff8c00); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .875rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); box-shadow: 0 4px 16px rgba(255,183,3,.3); }
+.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,183,3,.4); }
+.btn-cancel { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: .875rem; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); text-decoration: none; }
+.btn-cancel:hover { background: var(--bg-hover); color: var(--text-primary); }
+</style>
+
+<div class="crud-page">
+    <div class="form-card">
+        <div class="form-card-header">
+            <div class="form-card-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+            <div>
+                <div class="form-card-title">Sửa Tài liệu</div>
+                <div class="form-card-subtitle">Cập nhật tiêu đề và môn học</div>
+            </div>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-err" style="margin:1.5rem 2rem 0">
+                <i class="fa-solid fa-circle-exclamation" style="flex-shrink:0;margin-top:.1rem"></i>
+                <div>
+                    @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {<div>@e.ErrorMessage</div>}
+                </div>
+            </div>
+        }
+
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+            <div class="form-card-body">
+                <div class="field-group">
+                    <label class="field-label" for="title">Tiêu đề tài liệu <span class="req">*</span></label>
+                    <input type="text" id="title" name="title" class="field-input" value="@Model.Title" required />
+                </div>
+                <div class="field-group" style="margin-bottom:0">
+                    <label class="field-label" for="subjectId">Môn học <span class="req">*</span></label>
+                    <select id="subjectId" name="subjectId" class="field-input" required>
+                        @foreach (var s in subjects)
+                        {
+                            if (s.Id == Model.SubjectId)
+                            {<option value="@s.Id" selected>[@s.Code] @s.Name</option>}
+                            else
+                            {<option value="@s.Id">[@s.Code] @s.Name</option>}
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+                </button>
+                <a href="@(string.IsNullOrEmpty(ViewBag.ReturnUrl as string) ? "/Document/Index" : ViewBag.ReturnUrl)" class="btn-cancel">
+                    <i class="fa-solid fa-arrow-left"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

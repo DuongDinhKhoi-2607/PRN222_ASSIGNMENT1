@@ -1,0 +1,255 @@
+@{
+    ViewData["Title"] = "Upload Tài liệu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var subjects = ViewBag.Subjects as IEnumerable<SubjectDto> ?? Enumerable.Empty<SubjectDto>();
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.form-card { max-width: 620px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.form-card-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .85rem; background: var(--bg-elevated); }
+.form-card-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent-2), #00b090); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; box-shadow: 0 0 16px var(--accent-2-glow); flex-shrink: 0; }
+.form-card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+.form-card-subtitle { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+.form-card-body { padding: 2rem; }
+
+.alert-err { display: flex; align-items: flex-start; gap: .75rem; padding: .9rem 1.25rem; background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.2); border-radius: var(--radius-md); color: #ff6b84; font-size: .85rem; margin-bottom: 1.5rem; }
+
+.field-group { margin-bottom: 1.5rem; }
+.field-label { display: block; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: .55rem; }
+.field-label .req { color: var(--accent-danger); margin-left: .2rem; }
+.field-label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: .73rem; }
+.field-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); padding: .75rem 1rem; font-size: .9rem; font-family: 'Inter', sans-serif; transition: all var(--transition); appearance: none; }
+.field-input:focus { outline: none; border-color: var(--accent-2); box-shadow: 0 0 0 3px var(--accent-2-glow); }
+.field-input::placeholder { color: var(--text-muted); }
+.field-hint { font-size: .73rem; color: var(--text-muted); margin-top: .4rem; }
+
+.drop-zone { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 2rem 1.5rem; text-align: center; cursor: pointer; position: relative; transition: all var(--transition); }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent-2); background: rgba(0,212,170,.05); box-shadow: 0 0 20px var(--accent-2-glow); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-icon-circle { width: 56px; height: 56px; background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--accent-2); margin: 0 auto .85rem; }
+.drop-title { font-size: .9rem; font-weight: 600; color: var(--text-primary); margin-bottom: .3rem; }
+.drop-sub { font-size: .78rem; color: var(--text-muted); }
+.drop-types { display: flex; justify-content: center; gap: .4rem; margin-top: .75rem; }
+.type-chip { padding: .18rem .55rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 999px; font-size: .68rem; color: var(--text-muted); }
+
+.form-actions { display: flex; gap: .75rem; padding: 1.25rem 2rem; border-top: 1px solid var(--border); background: var(--bg-elevated); }
+.btn-submit { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.5rem; background: linear-gradient(135deg, var(--accent-2), #00b090); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .875rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); box-shadow: 0 4px 16px var(--accent-2-glow); text-decoration: none; }
+.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-2-glow); color: #fff; }
+.btn-cancel { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: .875rem; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); text-decoration: none; }
+.btn-cancel:hover { background: var(--bg-hover); color: var(--text-primary); }
+</style>
+
+<div class="crud-page">
+    <div class="form-card">
+        <div class="form-card-header">
+            <div class="form-card-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <div>
+                <div class="form-card-title">Upload Tài liệu</div>
+                <div class="form-card-subtitle">Ingest tài liệu vào RAG knowledge base</div>
+            </div>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert-err" style="margin:1.5rem 2rem 0">
+                <i class="fa-solid fa-circle-exclamation" style="flex-shrink:0;margin-top:.1rem"></i>
+                <div>
+                    @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@e.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="alert-success-bar" id="successAlert" style="display: none; margin: 1.5rem 2rem 0; padding: .9rem 1.25rem; background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2); border-radius: var(--radius-md); color: var(--accent-2); font-size: .85rem; align-items: flex-start; gap: .75rem;">
+            <i class="fa-solid fa-circle-check" style="flex-shrink:0;margin-top:.1rem"></i>
+            <div id="successText">Upload thành công!</div>
+        </div>
+
+        <div class="alert-err" id="errorAlert" style="display: none; margin: 1.5rem 2rem 0; padding: .9rem 1.25rem; background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.2); border-radius: var(--radius-md); color: #ff6b84; font-size: .85rem; align-items: flex-start; gap: .75rem;">
+            <i class="fa-solid fa-circle-exclamation" style="flex-shrink:0;margin-top:.1rem"></i>
+            <div id="errorText">Có lỗi xảy ra!</div>
+        </div>
+
+        <form id="uploadForm" asp-action="Upload" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+            <div class="form-card-body">
+
+                <div class="field-group">
+                    <label class="field-label">Tệp tài liệu <span class="req">*</span></label>
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" name="file" accept=".pdf,.txt,.docx,.md" required />
+                        <div class="drop-icon-circle"><i class="fa-solid fa-file-arrow-up"></i></div>
+                        <div class="drop-title" id="dropTitle">Kéo & thả file vào đây</div>
+                        <div class="drop-sub" id="dropSub">hoặc click để chọn file từ máy tính</div>
+                        <div class="drop-types">
+                            <span class="type-chip">PDF</span>
+                            <span class="type-chip">TXT</span>
+                            <span class="type-chip">DOCX</span>
+                            <span class="type-chip">MD</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="title">Tiêu đề tài liệu <span class="req">*</span></label>
+                    <input type="text" id="title" name="title" class="field-input" placeholder="VD: Chương 1 – Giới thiệu" required />
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="subjectId">Môn học <span class="req">*</span></label>
+                    <select id="subjectId" name="subjectId" class="field-input" required>
+                        <option value="">-- Chọn môn học --</option>
+                        @foreach (var s in subjects)
+                        {
+                            <option value="@s.Id">[@s.Code] @s.Name</option>
+                        }
+                    </select>
+                </div>
+
+
+                <div class="progress-container" id="progressContainer" style="display: none; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .4rem;">
+                        <span style="color: var(--text-primary); font-weight: 500;">Đang upload...</span>
+                        <span id="progressText" style="color: var(--text-muted);">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: var(--bg-elevated); border-radius: 999px; overflow: hidden; border: 1px solid var(--border);">
+                        <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(135deg, var(--accent-2), #00b090); transition: width 0.2s ease;"></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload & Ingest
+                </button>
+                <a href="@(string.IsNullOrEmpty(ViewBag.ReturnUrl as string) ? "/Document/Index" : ViewBag.ReturnUrl)" class="btn-cancel">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const dz = document.getElementById('dropZone');
+const fi = document.getElementById('fileInput');
+const tInput = document.getElementById('title');
+['dragover','dragenter'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('dragover'); }));
+dz.addEventListener('drop', ev => { 
+    ev.preventDefault();
+    if(ev.dataTransfer.files && ev.dataTransfer.files.length > 0) {
+        fi.files = ev.dataTransfer.files; // Assign dropped files to input
+        setFile(ev.dataTransfer.files[0]); 
+    }
+});
+fi.addEventListener('change', () => { if(fi.files && fi.files[0]) setFile(fi.files[0]); });
+function setFile(f) {
+    document.getElementById('dropTitle').textContent = f.name;
+    document.getElementById('dropSub').textContent = (f.size/1024).toFixed(1) + ' KB – đã chọn';
+    if(!tInput.value) tInput.value = f.name.replace(/\.[^.]+$/, '');
+}
+const uploadForm = document.getElementById('uploadForm');
+uploadForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData(this);
+    
+    document.getElementById('successAlert').style.display = 'none';
+    document.getElementById('errorAlert').style.display = 'none';
+    
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const btnSubmit = document.querySelector('.btn-submit');
+    
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.innerText = '0%';
+    btnSubmit.disabled = true;
+    
+    let processingInterval;
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            // Dành 50% thanh tiến trình cho việc upload file qua mạng
+            const uploadPercent = Math.round((e.loaded / e.total) * 50);
+            progressBar.style.width = uploadPercent + '%';
+            progressText.innerText = `Đang tải lên: ${uploadPercent}%`;
+            
+            // Khi upload xong, bắt đầu giả lập tiến trình xử lý trên server (50% -> 95%)
+            if (e.loaded === e.total && !processingInterval) {
+                progressText.innerText = 'Đang xử lý tài liệu (cắt chunk & embedding)... 50%';
+                let currentProgress = 50;
+                processingInterval = setInterval(() => {
+                    if (currentProgress < 95) {
+                        // Tăng ngẫu nhiên một khoảng nhỏ mỗi 500ms
+                        currentProgress += (Math.random() * 1.5 + 0.5);
+                        if (currentProgress > 95) currentProgress = 95;
+                        progressBar.style.width = currentProgress + '%';
+                        progressText.innerText = `Đang xử lý tài liệu (cắt chunk & embedding)... ${Math.round(currentProgress)}%`;
+                    }
+                }, 500);
+            }
+        }
+    });
+    
+    xhr.onload = function() {
+        if (processingInterval) clearInterval(processingInterval);
+        progressBar.style.width = '100%';
+        progressText.innerText = 'Hoàn tất! 100%';
+        
+        setTimeout(() => {
+            btnSubmit.disabled = false;
+            progressContainer.style.display = 'none';
+            
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    document.getElementById('successAlert').style.display = 'flex';
+                    document.getElementById('successText').innerText = res.message;
+                    uploadForm.reset();
+                    document.getElementById('dropTitle').textContent = 'Kéo & thả file vào đây';
+                    document.getElementById('dropSub').textContent = 'hoặc click để chọn file từ máy tính';
+                } else {
+                    document.getElementById('errorAlert').style.display = 'flex';
+                    document.getElementById('errorText').innerText = res.message || 'Có lỗi xảy ra khi upload.';
+                }
+            } catch (err) {
+                // If backend didn't return JSON (e.g. redirected or error page)
+                if (xhr.status === 200 && xhr.responseURL.includes('Index')) {
+                    // Succeeded and followed redirect to Index
+                    document.getElementById('successAlert').style.display = 'flex';
+                    document.getElementById('successText').innerText = 'Tài liệu đã được upload và xử lý thành công!';
+                    uploadForm.reset();
+                    document.getElementById('dropTitle').textContent = 'Kéo & thả file vào đây';
+                    document.getElementById('dropSub').textContent = 'hoặc click để chọn file từ máy tính';
+                } else {
+                    document.getElementById('errorAlert').style.display = 'flex';
+                    document.getElementById('errorText').innerText = 'Upload failed. Status: ' + xhr.status;
+                }
+            }
+        }, 500); // Đợi 500ms để người dùng thấy thanh chạy tới 100%
+    };
+    
+    xhr.onerror = function() {
+        if (processingInterval) clearInterval(processingInterval);
+        btnSubmit.disabled = false;
+        progressContainer.style.display = 'none';
+        document.getElementById('errorAlert').style.display = 'flex';
+        document.getElementById('errorText').innerText = 'Lỗi kết nối. Không thể upload.';
+    };
+    
+    xhr.open('POST', this.action, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.send(formData);
+});
+</script>
+}

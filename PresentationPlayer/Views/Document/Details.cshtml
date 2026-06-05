@@ -1,0 +1,184 @@
+@model DocumentDto
+@{
+    ViewData["Title"] = "Chi tiết Tài liệu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var content = ViewBag.Content as string;
+    var chunksCount = (int)(ViewBag.ChunksCount ?? 0);
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.details-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; max-width: 1080px; margin: 0 auto; align-items: start; }
+@@media(max-width:768px) { .details-grid { grid-template-columns: 1fr; } }
+
+.page-heading { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.75rem; display: flex; align-items: center; gap: .65rem; }
+.page-heading i { -webkit-text-fill-color: var(--accent-2); }
+
+.info-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.info-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .75rem; background: var(--bg-elevated); }
+.info-card-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #a78bfa); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #fff; font-size: .9rem; box-shadow: 0 0 12px var(--accent-glow); }
+.info-card-title { font-size: .9rem; font-weight: 700; color: var(--text-primary); }
+
+.meta-list { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.meta-row { display: grid; grid-template-columns: 110px 1fr; gap: .75rem; align-items: start; }
+.meta-key { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); padding-top: .1rem; }
+.meta-val { font-size: .875rem; color: var(--text-primary); }
+
+.badge-subject { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; background: rgba(108,99,255,.12); border: 1px solid rgba(108,99,255,.25); border-radius: 999px; font-size: .75rem; font-weight: 600; color: #a78bfa; }
+.status-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+.status-pill.indexed { background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); color: var(--accent-2); }
+.status-pill.pending { background: rgba(255,183,3,.1); border: 1px solid rgba(255,183,3,.2); color: var(--accent-warn); }
+.status-pill.error   { background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.2); color: var(--accent-danger); }
+
+.content-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-top: 1.5rem; }
+.content-body { padding: 1.25rem 1.5rem; max-height: 420px; overflow-y: auto; }
+.content-body::-webkit-scrollbar { width: 4px; }
+.content-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.content-text { font-size: .82rem; line-height: 1.75; white-space: pre-wrap; font-family: 'JetBrains Mono', 'Fira Code', monospace; color: var(--text-primary); }
+
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.stat-item { padding: 1.25rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.stat-item:nth-child(even) { border-right: none; }
+.stat-item:nth-last-child(-n+2) { border-bottom: none; }
+.stat-val { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-lbl { font-size: .7rem; color: var(--text-muted); margin-top: .2rem; }
+
+.action-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-top: 1.5rem; display: flex; flex-direction: column; gap: .65rem; }
+.btn-edit { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; background: linear-gradient(135deg, #ffb703, #ff8c00); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .85rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); box-shadow: 0 4px 12px rgba(255,183,3,.3); text-decoration: none; width: 100%; justify-content: center; }
+.btn-edit:hover { transform: translateY(-1px); color: #fff; }
+.btn-delete-link { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; background: rgba(255,77,109,.08); border: 1px solid rgba(255,77,109,.2); border-radius: var(--radius-sm); color: #ff6b84; font-size: .85rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); text-decoration: none; width: 100%; justify-content: center; }
+.btn-delete-link:hover { background: rgba(255,77,109,.15); border-color: rgba(255,77,109,.35); color: #ff6b84; }
+.btn-back { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.25rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: .85rem; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); text-decoration: none; width: 100%; justify-content: center; }
+.btn-back:hover { background: var(--bg-hover); color: var(--text-primary); }
+</style>
+
+<div class="crud-page">
+    <h1 class="page-heading"><i class="fa-solid fa-file-lines"></i>Chi tiết Tài liệu</h1>
+
+    <div class="details-grid">
+        <!-- Left column -->
+        <div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon"><i class="fa-solid fa-circle-info"></i></div>
+                    <span class="info-card-title">Thông tin tài liệu</span>
+                </div>
+                <div class="meta-list">
+                    <div class="meta-row">
+                        <span class="meta-key">Tiêu đề</span>
+                        <span class="meta-val" style="font-weight:600">@Model.Title</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">File</span>
+                        <span class="meta-val" style="color:var(--text-secondary)">@Model.FileName
+                            <span style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:4px;padding:.1rem .4rem;font-size:.7rem;color:var(--text-muted);margin-left:.4rem">@Model.FileType</span>
+                        </span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">Môn học</span>
+                        <div>
+                            @if (!string.IsNullOrEmpty(Model.SubjectCode))
+                            {<span class="badge-subject"><i class="fa-solid fa-book" style="font-size:.65rem"></i>@Model.SubjectCode</span>}
+                            <span style="font-size:.85rem;color:var(--text-secondary);margin-left:.4rem">@Model.SubjectName</span>
+                        </div>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">Người tải lên</span>
+                        <span class="meta-val" style="color:var(--text-primary)">@(Model.UploadedByName ?? "Không rõ")</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">Trạng thái</span>
+                        @if (Model.Status == "indexed" || Model.Status == "ready")
+                        {<span class="status-pill indexed"><i class="fa-solid fa-circle-check"></i>Indexed</span>}
+                        else if (Model.Status == "error")
+                        {<span class="status-pill error"><i class="fa-solid fa-circle-xmark"></i>Error</span>}
+                        else
+                        {<span class="status-pill pending"><i class="fa-solid fa-clock"></i>Pending</span>}
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">Upload lúc</span>
+                        <span class="meta-val" style="color:var(--text-muted)">@(Model.UploadedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-key">Index lúc</span>
+                        <span class="meta-val" style="color:var(--text-muted)">@(Model.IndexedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (ViewBag.Chunks != null && chunksCount > 0)
+            {
+                <div class="content-card">
+                    <div class="info-card-header">
+                        <div class="info-card-icon" style="background:linear-gradient(135deg,var(--accent-2),#00b090);box-shadow:0 0 12px var(--accent-2-glow)"><i class="fa-solid fa-file-lines"></i></div>
+                        <span class="info-card-title">Nội dung đã trích xuất</span>
+                        <span style="margin-left:auto;font-size:.72rem;color:var(--text-muted)">@chunksCount đoạn</span>
+                    </div>
+                    <div class="content-body" style="display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; background: var(--bg-surface);">
+                        @{ int chunkCounter = 1; }
+                        @foreach (var chunk in (IEnumerable<DataAccessPlayer.Models.DocumentChunk>)ViewBag.Chunks)
+                        {
+                            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem;">
+                                <div style="font-size: .75rem; font-weight: 600; color: var(--accent); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem;">
+                                    <i class="fa-solid fa-puzzle-piece"></i> Đoạn #@(chunkCounter++)
+                                </div>
+                                <pre class="content-text" style="margin: 0;">@chunk.Content</pre>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Right column -->
+        <div>
+            <div class="stat-card">
+                <div class="info-card-header" style="border-bottom:1px solid var(--border)">
+                    <div class="info-card-icon" style="background:linear-gradient(135deg,#ffb703,#ff8c00);box-shadow:0 0 12px rgba(255,183,3,.3)"><i class="fa-solid fa-chart-pie"></i></div>
+                    <span class="info-card-title">Thống kê</span>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-val">@chunksCount</div>
+                        <div class="stat-lbl">Đoạn văn</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" style="background:linear-gradient(135deg,var(--accent-2),#00b090);-webkit-background-clip:text;-webkit-text-fill-color:transparent">@Model.FileType</div>
+                        <div class="stat-lbl">Loại file</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" style="background:linear-gradient(135deg,var(--accent-warn),#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">@(Model.FileSize > 0 ? ((Model.FileSize / 1024.0).ToString("N0") + " KB") : "—")</div>
+                        <div class="stat-lbl">Kích thước</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" style="font-size:1rem;background:linear-gradient(135deg,#a78bfa,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent">@Model.SubjectCode</div>
+                        <div class="stat-lbl">Môn học</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-card">
+                @{
+                    var isAdmin = ViewBag.IsAdmin == true;
+                    var allowedSubjectIds = ViewBag.AllowedSubjectIds as List<long> ?? new List<long>();
+                    var canEdit = isAdmin || allowedSubjectIds.Contains(Model.SubjectId);
+                }
+                @if (canEdit)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@ViewBag.ReturnUrl" class="btn-edit">
+                        <i class="fa-solid fa-pen"></i> Chỉnh sửa
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@Model.Id" asp-route-returnUrl="@ViewBag.ReturnUrl" class="btn-delete-link">
+                        <i class="fa-solid fa-trash"></i> Xóa tài liệu
+                    </a>
+                }
+                <a href="@(string.IsNullOrEmpty(ViewBag.ReturnUrl as string) ? "/Document/Index" : ViewBag.ReturnUrl)" class="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

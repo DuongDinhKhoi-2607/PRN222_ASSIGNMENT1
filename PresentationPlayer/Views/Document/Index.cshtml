@@ -1,0 +1,180 @@
+@model IEnumerable<DocumentDto>
+@{
+    ViewData["Title"] = "Quản lý Tài liệu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var allowedSubjectIds = ViewBag.AllowedSubjectIds as List<long> ?? new List<long>();
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+.page-heading { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: .65rem; }
+.page-heading i { -webkit-text-fill-color: var(--accent-2); }
+
+.btn-add { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.25rem; background: linear-gradient(135deg, var(--accent-2), #00b090); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .85rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: all var(--transition); box-shadow: 0 4px 16px var(--accent-2-glow); }
+.btn-add:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-2-glow); color: #fff; }
+
+.alert-success-bar { display: flex; align-items: center; gap: .75rem; padding: .85rem 1.25rem; background: rgba(0,212,170,.1); border: 1px solid rgba(0,212,170,.25); border-radius: var(--radius-md); color: var(--accent-2); font-size: .85rem; margin-bottom: 1.5rem; animation: msg-in .25s ease; }
+.alert-error-bar { display: flex; align-items: center; gap: .75rem; padding: .85rem 1.25rem; background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.25); border-radius: var(--radius-md); color: var(--accent-danger); font-size: .85rem; margin-bottom: 1.5rem; animation: msg-in .25s ease; }
+
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; opacity: .3; }
+
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.data-table thead tr { background: var(--bg-elevated); }
+.data-table th { padding: .9rem 1.25rem; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--border); }
+.data-table td { padding: .85rem 1.25rem; font-size: .875rem; color: var(--text-primary); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr { transition: background var(--transition); }
+.data-table tbody tr:hover { background: var(--bg-hover); }
+
+.badge-subject { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; background: rgba(108,99,255,.12); border: 1px solid rgba(108,99,255,.25); border-radius: 999px; font-size: .7rem; font-weight: 600; color: #a78bfa; }
+.status-pill { display: inline-flex; align-items: center; gap: .3rem; padding: .22rem .65rem; border-radius: 999px; font-size: .72rem; font-weight: 600; }
+.status-pill.indexed { background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); color: var(--accent-2); }
+.status-pill.pending { background: rgba(255,183,3,.1); border: 1px solid rgba(255,183,3,.2); color: var(--accent-warn); }
+.status-pill.error   { background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.2); color: var(--accent-danger); }
+.file-chip { font-size: .73rem; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: .1rem .4rem; }
+
+.action-group { display: flex; gap: .4rem; align-items: center; }
+.btn-action { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); font-size: .8rem; text-decoration: none; transition: all var(--transition); cursor: pointer; }
+.btn-action.view:hover  { background: rgba(0,212,170,.15); border-color: rgba(0,212,170,.4); color: var(--accent-2); }
+.btn-action.edit:hover  { background: rgba(255,183,3,.15); border-color: rgba(255,183,3,.4); color: var(--accent-warn); }
+.btn-action.delete:hover { background: rgba(255,77,109,.15); border-color: rgba(255,77,109,.4); color: var(--accent-danger); }
+
+.no-permission-hint { font-size: .7rem; color: var(--text-muted); font-style: italic; }
+</style>
+
+<div class="crud-page">
+    <div class="page-header">
+        <h1 class="page-heading">
+            <i class="fa-solid fa-folder-open"></i>
+            Quản lý Tài liệu
+        </h1>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <form method="get" style="display: flex; align-items: center; gap: .5rem;">
+                <select name="subjectId" class="form-select" style="padding: .5rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-size: .85rem;" onchange="this.form.submit()">
+                    <option value="">-- Tất cả môn học --</option>
+                    @if (ViewBag.Subjects != null)
+                    {
+                        foreach (var s in ViewBag.Subjects)
+                        {
+                            if (ViewBag.CurrentSubjectId != null && (long)ViewBag.CurrentSubjectId == s.Id)
+                            {
+                                <option value="@s.Id" selected>@s.Code - @s.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@s.Id">@s.Code - @s.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </form>
+            @if (!isAdmin && allowedSubjectIds.Any())
+            {
+                <a asp-action="Upload" asp-route-returnUrl="@currentUrl" class="btn-add">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload tài liệu
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-success-bar">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-error-bar">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-solid fa-file-circle-xmark"></i>
+                <p>Chưa có tài liệu nào. Hãy upload tài liệu đầu tiên!</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tiêu đề</th>
+                    <th>File</th>
+                    <th>Môn học</th>
+                    <th>Trạng thái</th>
+                    <th>Người upload</th>
+                    <th>Ngày upload</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    var canEdit = isAdmin || allowedSubjectIds.Contains(d.SubjectId);
+                    <tr>
+                        <td style="font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="@d.Title">@d.Title</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:.4rem">
+                                <span class="file-chip">@d.FileType</span>
+                                <span style="font-size:.78rem;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="@d.FileName">@d.FileName</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(d.SubjectCode))
+                            {
+                                <span class="badge-subject"><i class="fa-solid fa-book" style="font-size:.65rem"></i>@d.SubjectCode</span>
+                            }
+                        </td>
+                        <td>
+                            @if (d.Status == "indexed" || d.Status == "ready")
+                            { <span class="status-pill indexed"><i class="fa-solid fa-circle-check"></i>Indexed</span> }
+                            else if (d.Status == "error")
+                            { <span class="status-pill error"><i class="fa-solid fa-circle-xmark"></i>Error</span> }
+                            else
+                            { <span class="status-pill pending"><i class="fa-solid fa-clock"></i>Pending</span> }
+                        </td>
+                        <td style="font-size:.8rem;color:var(--text-secondary)">@(d.UploadedByName ?? "Không rõ")</td>
+                        <td style="font-size:.8rem;color:var(--text-muted)">@(d.UploadedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td>
+                            <div class="action-group">
+                                <a asp-action="Details" asp-route-id="@d.Id" asp-route-returnUrl="@currentUrl" class="btn-action view" title="Chi tiết">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                @if (canEdit)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@d.Id" asp-route-returnUrl="@currentUrl" class="btn-action edit" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@d.Id" asp-route-returnUrl="@currentUrl" class="btn-action delete" title="Xóa">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="no-permission-hint" title="Liên hệ Admin để được cấp quyền">
+                                        <i class="fa-solid fa-lock" style="font-size:.65rem"></i>
+                                    </span>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

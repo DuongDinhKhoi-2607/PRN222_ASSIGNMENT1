@@ -1,0 +1,171 @@
+@model ChatSessionDto
+@{
+    ViewData["Title"] = "Phiên Chat AI";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var session = ViewBag.Session as ChatSessionDto;
+    var messages = ViewBag.Messages as IEnumerable<ChatMessageDto> ?? Enumerable.Empty<ChatMessageDto>();
+}
+
+<div style="display: flex; height: calc(100vh - 60px); margin: -1.5rem; background: var(--bg-base);">
+    <!-- Chat Sidebar -->
+    <div style="width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column;">
+        <div style="padding: 1rem;">
+            <a href="/Chat" style="display: flex; align-items: center; justify-content: center; gap: .5rem; width: 100%; padding: .6rem 1rem; background: linear-gradient(135deg, var(--accent), #a78bfa); border-radius: var(--radius-sm); color: #fff; font-size: .9rem; font-weight: 600; text-decoration: none; box-shadow: 0 4px 16px var(--accent-glow);"><i class="fa-solid fa-plus"></i> Tạo phiên mới</a>
+        </div>
+        <div style="padding: 0 1rem 1rem; flex: 1; overflow-y: auto;">
+            <div style="font-size: .8rem; font-weight: 600; color: var(--text-muted); margin-bottom: .5rem; text-transform: uppercase;">Gần đây</div>
+            @if (ViewBag.History != null)
+            {
+                foreach (var h in (IEnumerable<ChatSessionDto>)ViewBag.History)
+                {
+                    <a href="/Chat/Session/@h.Id" style="display: block; padding: .5rem; color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); margin-bottom: .2rem; background: @(session != null && session.Id == h.Id ? "rgba(108,99,255,.15)" : "transparent"); border: 1px solid @(session != null && session.Id == h.Id ? "rgba(108,99,255,.3)" : "transparent"); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <i class="fa-regular fa-message" style="margin-right: .5rem; color: @(session != null && session.Id == h.Id ? "#a78bfa" : "var(--text-muted)");"></i>
+                        @(string.IsNullOrWhiteSpace(h.Title) ? $"Phiên #{h.Id}" : h.Title)
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="chat-area" style="flex: 1; border-left: none;">
+        <!-- Chat Header -->
+        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0;">
+                    <i class="fa-solid fa-comments" style="color: var(--accent); margin-right: .5rem;"></i>@(session == null ? "Phiên Chat Mới" : (string.IsNullOrWhiteSpace(session.Title) ? $"Phiên #{session.Id}" : session.Title))
+                </h3>
+            </div>
+            <a asp-action="Index" class="btn-icon" title="Đóng phiên" style="text-decoration:none">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages" id="chatMessages">
+            @if (!messages.Any())
+            {
+                <div class="chat-empty">
+                    <div class="chat-empty-icon"><i class="fa-solid fa-robot"></i></div>
+                    <h3>Xin chào! RAG Assistant đã sẵn sàng.</h3>
+                    <p>Tôi có thể giúp bạn tìm kiếm thông tin và giải đáp thắc mắc dựa trên tất cả tài liệu môn học hiện có. Hãy gửi câu hỏi đầu tiên bên dưới.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var m in messages)
+                {
+                    <div class="msg-row @(m.Role == "user" ? "user" : "bot")">
+                        <div class="msg-avatar">
+                            @if (m.Role == "user")
+                            {
+                                <i class="fa-solid fa-user"></i>
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-robot"></i>
+                            }
+                        </div>
+                        <div class="msg-body">
+                            <div class="msg-bubble">@m.Content</div>
+                            <div class="msg-time">@(m.CreatedAt?.AddHours(7).ToString("HH:mm") ?? "")</div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-bar">
+            <form asp-action="Send" method="post" id="chatForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" value="@(session?.Id ?? 0)" />
+                <div class="input-row">
+                    <textarea id="question" name="question" placeholder="Nhập câu hỏi của bạn (Shift + Enter để xuống dòng)..." rows="1" required></textarea>
+                    
+                    <button type="submit" class="btn-send" id="btnSend">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const msgContainer = document.getElementById('chatMessages');
+    const qInput = document.getElementById('question');
+    const form = document.getElementById('chatForm');
+    const btnSend = document.getElementById('btnSend');
+
+    // Auto scroll to bottom
+    function scrollToBottom() {
+        if (msgContainer) {
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+    }
+    
+    // Auto resize textarea
+    qInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if (this.value.trim() === '') {
+            this.style.height = 'auto'; // Reset if empty
+        }
+    });
+
+    // Enter to send
+    qInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (this.value.trim() !== '') {
+                form.submit();
+            }
+        }
+    });
+
+    // Disable form on submit to prevent double send
+    form.addEventListener('submit', function() {
+        if (qInput.value.trim() === '') return false;
+        
+        btnSend.disabled = true;
+        btnSend.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        
+        // Show user message instantly
+        const userMsg = qInput.value;
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        
+        const userHtml = `
+        <div class="msg-row user">
+            <div class="msg-avatar"><i class="fa-solid fa-user"></i></div>
+            <div class="msg-body">
+                <div class="msg-bubble">${userMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</div>
+                <div class="msg-time">${timeStr}</div>
+            </div>
+        </div>`;
+
+        // Show typing indicator
+        const typingHtml = `
+        <div class="msg-row bot">
+            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="msg-body">
+                <div class="typing-indicator">
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+            </div>
+        </div>`;
+        
+        // Remove empty state if present
+        const emptyState = document.querySelector('.chat-empty');
+        if (emptyState) emptyState.remove();
+        
+        msgContainer.insertAdjacentHTML('beforeend', userHtml + typingHtml);
+        scrollToBottom();
+    });
+
+    // Initial scroll
+    scrollToBottom();
+</script>
+}

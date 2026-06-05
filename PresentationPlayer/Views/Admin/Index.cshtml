@@ -1,0 +1,174 @@
+@model IEnumerable<BussinessLayer.DTOs.LecturerPermissionDto>
+@{
+    ViewData["Title"] = "Quản lý Quyền Giảng viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+.crud-page { height: 100%; overflow-y: auto; padding: 2rem; }
+.crud-page::-webkit-scrollbar { width: 4px; }
+.crud-page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-heading { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: .65rem; }
+.page-heading i { -webkit-text-fill-color: #a78bfa; }
+
+.btn-add { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.25rem; background: linear-gradient(135deg, var(--accent), #a78bfa); border: none; border-radius: var(--radius-sm); color: #fff; font-size: .85rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: all var(--transition); box-shadow: 0 4px 16px var(--accent-glow); }
+.btn-add:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); color: #fff; }
+
+.alert-bar { display: flex; align-items: center; gap: .75rem; padding: .85rem 1.25rem; border-radius: var(--radius-md); font-size: .85rem; margin-bottom: 1.5rem; animation: msg-in .25s ease; }
+.alert-success-bar { background: rgba(0,212,170,.1); border: 1px solid rgba(0,212,170,.25); color: var(--accent-2); }
+.alert-error-bar { background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.25); color: var(--accent-danger); }
+
+@@keyframes msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; opacity: .3; }
+
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.data-table thead tr { background: var(--bg-elevated); }
+.data-table th { padding: .9rem 1.25rem; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--border); }
+.data-table td { padding: .85rem 1.25rem; font-size: .875rem; color: var(--text-primary); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr { transition: background var(--transition); }
+.data-table tbody tr:hover { background: var(--bg-hover); }
+
+.badge-lecturer { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; background: rgba(108,99,255,.12); border: 1px solid rgba(108,99,255,.25); border-radius: 999px; font-size: .75rem; font-weight: 600; color: #a78bfa; }
+.badge-subject { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); border-radius: 999px; font-size: .75rem; font-weight: 600; color: var(--accent-2); }
+.badge-active { display: inline-flex; align-items: center; gap: .3rem; padding: .22rem .65rem; border-radius: 999px; font-size: .72rem; font-weight: 600; background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); color: var(--accent-2); }
+
+.btn-revoke { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .75rem; background: rgba(255,77,109,.1); border: 1px solid rgba(255,77,109,.25); border-radius: var(--radius-sm); color: var(--accent-danger); font-size: .78rem; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: all var(--transition); }
+.btn-revoke:hover { background: rgba(255,77,109,.2); border-color: rgba(255,77,109,.5); transform: translateY(-1px); }
+
+.stats-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
+.stat-card { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+.stat-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.stat-icon.purple { background: rgba(108,99,255,.15); color: var(--accent); }
+.stat-icon.teal { background: rgba(0,212,170,.12); color: var(--accent-2); }
+.stat-icon.amber { background: rgba(255,183,3,.12); color: var(--accent-warn); }
+.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.stat-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: .15rem; }
+</style>
+
+<div class="crud-page">
+    <div class="page-header">
+        <h1 class="page-heading">
+            <i class="fa-solid fa-user-shield"></i>
+            Quản lý Quyền Giảng viên
+        </h1>
+        <a asp-action="Grant" class="btn-add">
+            <i class="fa-solid fa-plus"></i> Cấp quyền mới
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-bar alert-success-bar">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-bar alert-error-bar">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    @{
+        var permList = Model.ToList();
+        var totalPermissions = permList.Count;
+        var uniqueLecturers = permList.Select(p => p.LecturerId).Distinct().Count();
+        var uniqueSubjects = permList.Select(p => p.SubjectId).Distinct().Count();
+    }
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalPermissions</div>
+                <div class="stat-label">Tổng quyền đã cấp</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon teal">
+                <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <div>
+                <div class="stat-value">@uniqueLecturers</div>
+                <div class="stat-label">Giảng viên được cấp</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-book"></i>
+            </div>
+            <div>
+                <div class="stat-value">@uniqueSubjects</div>
+                <div class="stat-label">Môn học liên quan</div>
+            </div>
+        </div>
+    </div>
+
+    @if (!permList.Any())
+    {
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-solid fa-shield-halved"></i>
+                <p>Chưa cấp quyền cho giảng viên nào. Nhấn "Cấp quyền mới" để bắt đầu!</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Giảng viên</th>
+                    <th>Email</th>
+                    <th>Môn học</th>
+                    <th>Ngày cấp</th>
+                    <th>Cấp bởi</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in permList)
+                {
+                    <tr>
+                        <td>
+                            <span class="badge-lecturer">
+                                <i class="fa-solid fa-chalkboard-user" style="font-size:.65rem"></i>
+                                @p.LecturerName
+                            </span>
+                        </td>
+                        <td style="font-size:.8rem; color:var(--text-secondary)">@p.LecturerEmail</td>
+                        <td>
+                            <span class="badge-subject">
+                                <i class="fa-solid fa-book" style="font-size:.65rem"></i>
+                                @p.SubjectCode – @p.SubjectName
+                            </span>
+                        </td>
+                        <td style="color:var(--text-muted);font-size:.78rem">@(p.GrantedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                        <td style="font-size:.8rem; color:var(--text-secondary)">@p.GrantedByName</td>
+                        <td>
+                            <form asp-action="Revoke" asp-route-id="@p.Id" method="post" style="display:inline"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn thu hồi quyền này?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-revoke">
+                                    <i class="fa-solid fa-ban"></i> Thu hồi
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
